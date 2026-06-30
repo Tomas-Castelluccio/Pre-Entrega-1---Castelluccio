@@ -1,11 +1,29 @@
 const express = require("express");
+const path = require("path");
+const { engine } = require("express-handlebars");
 const app = express();
 const productsRoutes = require("./src/routes/products.routes");
 const fs = require("fs/promises");
 const config = require("./config/config");
+const ProductsDao = require("./src/dao/products.dao");
+const ProductsService = require("./src/services/products.service");
+
+const productsDao = new ProductsDao(config.getFilePath("products.json"));
+const productsService = new ProductsService(productsDao);
+
+app.engine("hbs", engine({
+  extname: ".hbs",
+  defaultLayout: "main",
+  layoutsDir: path.join(__dirname, "src/views/layouts"),
+  partialsDir: path.join(__dirname, "src/views/partials"),
+}));
+app.set("view engine", "hbs");
+app.set("views", path.join(__dirname, "src/views/pages"));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use("/static", express.static(path.join(__dirname, "public")));
+app.use("/static/img", express.static(path.join(__dirname, "..", "img")));
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
@@ -69,32 +87,21 @@ app.get("/api/unmodulated/bookbyid/:id", async (req, res) => {
   }
 });
 
-app.get("/", (req, res) => {
+app.get("/", async (req, res, next) => {
   try {
-    const styles = `
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin-top: 50px;
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-  </style>
-`;
-    const html = `
-  ${styles}
-  <h1>API Books</h1>
-  <button onclick="location.href='/api/books'">Ir a libros</button>
-`;
-
-    res.send(html);
+    const products = await productsService.getAllProducts();
+    res.render("home", { products });
   } catch (error) {
-    console.error("Error en la ruta raíz:", error);
-    res.status(500).send("Error en el servidor");
+    next(error);
+  }
+});
+
+app.get("/realtimeproducts", async (req, res, next) => {
+  try {
+    const products = await productsService.getAllProducts();
+    res.render("realTimeProducts", { products });
+  } catch (error) {
+    next(error);
   }
 });
 

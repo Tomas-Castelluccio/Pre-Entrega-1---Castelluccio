@@ -3,13 +3,8 @@ const path = require("path");
 const { engine } = require("express-handlebars");
 const app = express();
 const productsRoutes = require("./src/routes/products.routes");
-const fs = require("fs/promises");
+const cartsRoutes = require("./src/routes/carts.routes");
 const config = require("./config/config");
-const ProductsDao = require("./src/dao/products.dao");
-const ProductsService = require("./src/services/products.service");
-
-const productsDao = new ProductsDao(config.getFilePath("products.json"));
-const productsService = new ProductsService(productsDao);
 
 app.engine("hbs", engine({
   extname: ".hbs",
@@ -37,59 +32,15 @@ app.use((req, res, next) => {
 });
 
 app.use("/api/products", productsRoutes);
-
-app.get("/api/unmodulated/bookbyid/:id", async (req, res) => {
-  try {
-    const bookId = req.params.id;
-
-    if (!bookId) {
-      return res.status(400).json({ error: "Falta el ID del libro" });
-    }
-
-    const getBookById = async (id) => {
-      const data = await fs.readFile(config.getFilePath("books.json"), "utf-8");
-      const books = JSON.parse(data);
-
-      return books.find((book) => String(book.id) === String(id));
-    };
-
-    const book = await getBookById(bookId);
-
-    if (!book) {
-      return res.status(404).json({ error: "Libro no encontrado" });
-    }
-
-    const checkBookAvailability = (book) => {
-      let response = {
-        book,
-        message: "",
-        status: false,
-      };
-
-      if (book.stock === 0) {
-        response.message = "Libro no disponible";
-      } else if (book.stock > 0 && book.stock < 3) {
-        response.message = "Libro pronto a agotarse";
-        response.status = true;
-      } else {
-        response.status = true;
-      }
-
-      return response;
-    };
-
-    const response = checkBookAvailability(book);
-
-    return res.json(response);
-  } catch (error) {
-    console.error("Error en la ruta /api/unmodulated/bookbyid/:id:", error);
-    res.status(500).json({ error: "Error interno del servidor" });
-  }
-});
+app.use("/api/carts", cartsRoutes);
 
 app.get("/", async (req, res, next) => {
   try {
-    const products = await productsService.getAllProducts();
+    const productsDao = require("./src/dao/products.dao");
+    const productsService = require("./src/services/products.service");
+    const productsDaoInstance = new productsDao(config.getFilePath("products.json"));
+    const productsServiceInstance = new productsService(productsDaoInstance);
+    const products = await productsServiceInstance.getAllProducts();
     res.render("home", { products });
   } catch (error) {
     next(error);
@@ -98,7 +49,11 @@ app.get("/", async (req, res, next) => {
 
 app.get("/realtimeproducts", async (req, res, next) => {
   try {
-    const products = await productsService.getAllProducts();
+    const productsDao = require("./src/dao/products.dao");
+    const productsService = require("./src/services/products.service");
+    const productsDaoInstance = new productsDao(config.getFilePath("products.json"));
+    const productsServiceInstance = new productsService(productsDaoInstance);
+    const products = await productsServiceInstance.getAllProducts();
     res.render("realTimeProducts", { products });
   } catch (error) {
     next(error);
@@ -137,7 +92,7 @@ app.use((req, res, next) => {
     <body>
     <div class="container">
       <h1>404 - Not Found</h1>
-      <p>La página que buscas no existe.</p>
+      <p>La p�gina que buscas no existe.</p>
       <a href="/" class="btn">Volver al inicio</a>
     </div>
     </body>
@@ -148,7 +103,7 @@ app.use((req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
-  console.error("❌ Error:", err.message);
+  console.error("Error:", err.message);
 
   res.status(500).json({
     success: false,

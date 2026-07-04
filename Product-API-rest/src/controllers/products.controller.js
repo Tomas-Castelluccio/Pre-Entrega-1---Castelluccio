@@ -17,8 +17,8 @@ class ProductsController {
 
   getProductById = async (req, res, next) => {
     try {
-      const { id } = req.params;
-      const product = await this.productsService.getProductById(id);
+      const { pid } = req.params;
+      const product = await this.productsService.getProductById(pid);
       if (!product) {
         return res.status(404).json({ message: "Producto no encontrado" });
       }
@@ -39,8 +39,8 @@ class ProductsController {
 
   updateProduct = async (req, res, next) => {
     try {
-      const { id } = req.params;
-      const updatedProduct = await this.productsService.updateProduct(id, req.body);
+      const { pid } = req.params;
+      const updatedProduct = await this.productsService.updateProduct(pid, req.body);
       res.json(updatedProduct);
     } catch (error) {
       next(error);
@@ -49,8 +49,8 @@ class ProductsController {
 
   deleteProduct = async (req, res, next) => {
     try {
-      const { id } = req.params;
-      const deletedId = await this.productsService.deleteProduct(id);
+      const { pid } = req.params;
+      const deletedId = await this.productsService.deleteProduct(pid);
       res.json({ id: deletedId, message: "Producto eliminado" });
     } catch (error) {
       next(error);

@@ -10,9 +10,9 @@ const productsService = new ProductsService(productsDao);
 const productsController = new ProductsController(productsService);
 
 router.get("/", productsController.getProducts);
-router.get("/:id", productsController.getProductById);
+router.get("/:pid", productsController.getProductById);
 router.post("/", productsController.createProduct);
-router.put("/:id", productsController.updateProduct);
-router.delete("/:id", productsController.deleteProduct);
+router.put("/:pid", productsController.updateProduct);
+router.delete("/:pid", productsController.deleteProduct);
 
 module.exports = router;

@@ -12,9 +12,9 @@ class ProductsService {
     return await this.productsDao.getById(id);
   }
 
-  async createBook(bookData) {
-    const requiredFields = ["title", "author", "price", "stock"];
-    const missingFields = requiredFields.filter((field) => !bookData[field]);
+  async createProduct(productData) {
+    const requiredFields = ["title", "code", "price", "status", "stock", "category", "thumbnails"];
+    const missingFields = requiredFields.filter((field) => !productData[field]);
 
     if (missingFields.length > 0) {
       throw new Error(
@@ -22,21 +22,37 @@ class ProductsService {
       );
     }
 
+    if (typeof productData.price !== "number") {
+      throw new Error("Price debe ser un número");
+    }
+
+    if (typeof productData.stock !== "number") {
+      throw new Error("Stock debe ser un número");
+    }
+
+    if (typeof productData.status !== "boolean") {
+      throw new Error("Status debe ser un booleano");
+    }
+
+    if (!Array.isArray(productData.thumbnails)) {
+      throw new Error("Thumbnails debe ser un array de strings");
+    }
+
     return await this.productsDao.create(productData);
   }
 
-  async updateProduct(id, updateData) {
-    if (!id) throw new Error("ID requerido");
-    const existing = await this.productsDao.getById(id);
-    if (!existing) throw new AppError("Producto no encontrado", 404);
-    return await this.productsDao.update(id, updateData);
+  async updateProduct(pid, updateData) {
+    if (!pid) throw new Error("ID requerido");
+    const existing = await this.productsDao.getById(pid);
+    if (!existing) throw new Error("Producto no encontrado");
+    return await this.productsDao.update(pid, updateData);
   }
 
-  async deleteProduct(id) {
-    if (!id) throw new Error("ID requerido");
-    const existing = await this.productsDao.getById(id);
-    if (!existing) throw new AppError("Producto no encontrado", 404);
-    return await this.productsDao.delete(id);
+  async deleteProduct(pid) {
+    if (!pid) throw new Error("ID requerido");
+    const existing = await this.productsDao.getById(pid);
+    if (!existing) throw new Error("Producto no encontrado");
+    return await this.productsDao.delete(pid);
   }
 }
 
